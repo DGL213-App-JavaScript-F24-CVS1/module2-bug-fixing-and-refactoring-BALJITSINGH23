@@ -1,19 +1,19 @@
-"use strict";
+'use strict';
 
 (() => {
-window.addEventListener("load", (event) => {
+window.addEventListener('load', (event) => {
 // *****************************************************************************
 // #region Constants and Variables
 
 // Canvas references
-const canvas = document.querySelector("canvas");
-const ctx = canvas.getContext("2d");
+const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
 
 // UI references
-const restartButton = document.querySelector("#restart");
+const restartButton = document.querySelector('#restart');
 const undoButton = document.querySelector('#undo');
 const rotateButton = document.querySelector('#rotate');
-const colorSelectButtons = document.querySelectorAll(".color-select");
+const colorSelectButtons = document.querySelectorAll('.color-select');
 const playerScoreText = document.querySelector('#score-text'); 
 
 // Constants
@@ -23,7 +23,7 @@ const CELL_COLORS = {
     red: [255, 0, 0],
     green: [0, 255, 0], 
     blue: [0, 0, 255]
-}
+};
 const CELLS_PER_AXIS = 9;
 const CELL_WIDTH = canvas.width/CELLS_PER_AXIS;
 const CELL_HEIGHT = canvas.height/CELLS_PER_AXIS;
@@ -85,40 +85,74 @@ function transposeGrid() {
     render(grids[grids.length-1]);
 }
 
+// function render(grid) {
+//     for (let i = 0; i < grid.length; i++) {
+//         ctx.fillStyle = `rgb(${grid[i][0]}, ${grid[i][1]}, ${grid[i][2]})`;
+//         ctx.fillRect((i % CELLS_PER_AXIS) * CELL_WIDTH, Math.floor(i / CELLS_PER_AXIS) * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
+//     }
+//     playerScoreText.textContent = playerScore;
+// }
+
 function render(grid) {
+    // console.log("Grid before rendering: ", grid); // Log grid before rendering
     for (let i = 0; i < grid.length; i++) {
-        ctx.fillStyle = `rgb(${grid[i][0]}, ${grid[i][0]}, ${grid[i][2]})`;
+        ctx.fillStyle = `rgb(${grid[i][0]}, ${grid[i][1]}, ${grid[i][2]})`;
         ctx.fillRect((i % CELLS_PER_AXIS) * CELL_WIDTH, Math.floor(i / CELLS_PER_AXIS) * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
     }
+    // console.log("Grid after rendering: ", grid); // Log grid after rendering
     playerScoreText.textContent = playerScore;
 }
 
+
+
 function updateGridAt(mousePositionX, mousePositionY) {
+    console.log("Mouse Position X: ", mousePositionX, "Mouse Position Y: ", mousePositionY);
     const gridCoordinates = convertCartesiansToGrid(mousePositionX, mousePositionY);
-    const newGrid = grids[grids.length-1].slice(); 
-    floodFill(newGrid, gridCoordinates, newGrid[gridCoordinates.column * CELLS_PER_AXIS + gridCoordinates.row])
+    console.log("Grid Coordinates: ", gridCoordinates);
+
+    const newGrid = grids[grids.length - 1].slice(); 
+    console.log("Grid before flood fill: ", newGrid);
+
+    floodFill(newGrid, gridCoordinates, newGrid[gridCoordinates.column * CELLS_PER_AXIS + gridCoordinates.row]);
+    console.log("Grid after flood fill: ", newGrid);
+
     grids.push(newGrid);
-    render(grids[grids.length-1]);    
+    render(grids[grids.length - 1]);
 }
+
 
 function updatePlayerScore() {
 playerScore = playerScore > 0 ? playerScore -= 1 : 0;
 }
 
 function floodFill(grid, gridCoordinate, colorToChange) { 
-    if (arraysAreEqual(colorToChange, replacementColor)) { return } //The current cell is already the selected color
-    else if (!arraysAreEqual(grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column], colorToChange)) { return }  //The current cell is a different color than the initially clicked-on cell
+    // Check if the current cell is already the selected color to prevent infinite loop
+    if (arraysAreEqual(colorToChange, replacementColor)) { return; }
+
+    // Check if the cell color is different from the initial clicked cell color
+    else if (!arraysAreEqual(grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column], colorToChange)) {
+        return; // Exit if the cell is not of the target color to change
+    }
+
+    // Change the cell color to the replacement color
     else {
         grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column] = replacementColor;
+
+       
         floodFill(grid, {column: Math.max(gridCoordinate.column - 1, 0), row: gridCoordinate.row}, colorToChange);
-        floodFill(grid, {column: Math.min(gridCoordinate.column + 1, CELLS_PER_AXIS - 1), row: gridCoordinate.row}, colorToChange);
-        floodFill(grid, {column: gridCoordinate.column, row: Math.max(gridCoordinate.row - 1, 0)}, colorToChange);
-        floodFill(grid, {column: gridCoordinate.column, row: Math.min(gridCoordinate.row + 1, CELLS_PER_AXIS - 1)}, colorToChange);
+floodFill(grid, {column: Math.min(gridCoordinate.column + 1, CELLS_PER_AXIS - 1), row: gridCoordinate.row}, colorToChange);
+floodFill(grid, {column: gridCoordinate.column, row: Math.max(gridCoordinate.row - 1, 0)}, colorToChange);
+floodFill(grid, {column: gridCoordinate.column, row: Math.min(gridCoordinate.row + 1, CELLS_PER_AXIS - 1)}, colorToChange);
     }
-    return
+
+    return;
 }
 
+
+
+
 function restart() {
+    playerScore = MAXIMUM_SCORE;
     startGame(grids[0]);
 }
 
@@ -126,31 +160,32 @@ function restart() {
 
 
 // *****************************************************************************
-// #region Event Listeners
+//     #region Event Listeners
 
-canvas.addEventListener("mousedown", gridClickHandler);
+canvas.addEventListener('mousedown', gridClickHandler);
 function gridClickHandler(event) {
      updatePlayerScore();
     updateGridAt(event.offsetX, event.offsetY);
 }
 
-restartButton.addEventListener("mousedown", restartClickHandler);
+restartButton.addEventListener('mousedown', restartClickHandler);
 function restartClickHandler() {
     restart();
 }
 
-undoButton.addEventListener("mousedown", undoLastMove);
+undoButton.addEventListener('mousedown', undoLastMove);
 function undoLastMove() {
     rollBackHistory();
 }
 
-rotateButton.addEventListener("mousedown", rotateGrid);
+rotateButton.addEventListener('mousedown', rotateGrid);
 function rotateGrid() {
     transposeGrid();
 }
 
 colorSelectButtons.forEach(button => {
-    button.addEventListener("mousedown", () => replacementColor = CELL_COLORS[button.name])
+    button.addEventListener('mousedown', () => replacementColor = CELL_COLORS[button.name]);
+    console.log("Selected color:", replacementColor);
 });
 
 // #endregion
@@ -173,18 +208,23 @@ function chooseRandomPropertyFrom(object) {
     return object[keys[ Math.floor(keys.length * Math.random()) ]]; //Truncates to integer
 };
 
-// To compare two arrays
+
+// }
+
 function arraysAreEqual(arr1, arr2) {
-    if (arr1.length != arr2.length) { return false }
-    else {
-        for (let i = 0; i < arr1.length; i++) {
-            if (arr1[i] != arr2[i]) {
-                return false;
-            }
+    // console.log("Comparing arrays: ", arr1, arr2); // Add this line to debug the arrays being compared
+    if (arr1.length != arr2.length) { return false; }
+    else{
+    for (let i = 0; i < arr1.length; i++) {
+        if (arr1[i] != arr2[i]) {
+            return false;
         }
-        return true;
     }
+    return true;
 }
+}
+
+
 
 // #endregion
 
@@ -193,3 +233,7 @@ startGame();
 
 });
 })();
+
+
+
+
